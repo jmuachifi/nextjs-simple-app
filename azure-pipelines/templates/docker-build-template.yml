@@ -1,0 +1,12 @@
+steps:
+  - task: Docker@2
+    displayName: Build and Push Docker Image
+    condition: ne(variables['skipBuild'], '1')
+    inputs:
+      containerRegistry: $(dockerRegistryServiceConnection)
+      repository: $(dockerImageNamev1)
+      command: buildAndPush
+      Dockerfile: '**/Dockerfile'
+      tags: |
+        $(fileHash)
+        latest

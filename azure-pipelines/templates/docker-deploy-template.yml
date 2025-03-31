@@ -1,0 +1,7 @@
+steps:
+  - task: AzureWebAppContainer@1
+    displayName: Deploy to Azure Web App
+    inputs:
+      azureSubscription: 'azureServiceConnection'
+      appName: 'app-svc-demo'
+      containers: 'jmuachifi/agl-nextjs-webapp:$(resolvedTag)'

@@ -1,0 +1,54 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: "ubuntu-latest"
+
+variables:
+  - group: AGL-Shared
+
+stages:
+  - stage: BuildAndScan
+    displayName: Build, Scan, and Publish Artifact
+    jobs:
+      - job: BuildImage
+        displayName: Build Docker Image and Scan
+        steps:
+          - checkout: self
+
+          - bash: |
+              echo "🔐 Generating hash from source files in my-app/"
+              FILE_HASH=$(find my-app -type f -not -path "*/node_modules/*" -not -path "*/.next/*" -exec sha256sum {} \; | sort | sha256sum | awk '{print $1}')
+              echo "Computed hash: $FILE_HASH"
+              echo "##vso[task.setvariable variable=fileHash]$FILE_HASH"
+              echo "$FILE_HASH" > $(Build.ArtifactStagingDirectory)/file-hash.txt
+            displayName: Generate file hash from my-app content
+
+          - bash: |
+              echo "🔍 Checking if image $(dockerRegistry)/$(dockerImageNamev1):$(fileHash) exists..."
+              if docker manifest inspect $(dockerRegistry)/$(dockerImageNamev1):$(fileHash) > /dev/null 2>&1; then
+                echo "##vso[task.logissue type=warning] Docker image already exists in registry"
+                echo "##vso[task.setvariable variable=skipBuild]1"
+              else
+                echo "Docker image does not exist. Proceeding with build."
+                echo "##vso[task.setvariable variable=skipBuild]0"
+              fi
+            displayName: Check if Docker image exists
+
+          # - ${{ if ne(variables['skipBuild'], '1') }}:
+          #     - template: templates/docker-build-template.yml
+
+          # - template: templates/scan-template.yml
+          - template: templates/docker-build-template.yml
+          #   parameters:
+          #     condition: ne(variables['skipBuild'], '1')
+
+          - script: |
+              echo "fileHash=$(fileHash)" > $(Build.ArtifactStagingDirectory)/build-info.txt
+              echo "dockerTag=$(fileHash)" >> $(Build.ArtifactStagingDirectory)/build-info.txt
+            displayName: Save build info
+
+          - publish: $(Build.ArtifactStagingDirectory)
+            artifact: dockerBuildInfo

@@ -1,0 +1,4 @@
+variables:
+  dockerRegistryServiceConnection: 'DockerHubConnection'
+  dockerRegistry: 'docker.io'
+  dockerImageNamev1: 'agl-nextjs-webapp'

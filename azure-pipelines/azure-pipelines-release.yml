@@ -1,0 +1,205 @@
+# resources:
+#   pipelines:
+#     - pipeline: buildPipeline
+#       source: Nextjs AGL Build Pipeline 
+#       # trigger:
+#       #   branches:
+#       #     include:
+#       #       - main
+
+
+# stages:
+#   - stage: Deploy_DEV
+#     displayName: Deploy to DEV
+#     variables:
+#       - template: vars/dev-vars.yml
+#     jobs:
+#       - deployment: DeployDockerDev
+#         environment: 'AGL-DEV'
+#         strategy:
+#           runOnce:
+#             deploy:
+#               steps:
+#                 - task: DownloadPipelineArtifact@2
+#                   inputs:
+#                     buildType: 'specific'
+#                     project: '$(System.TeamProject)'
+#                     pipeline: 'Nextjs AGL Build Pipeline'
+#                     runVersion: 'latest'
+#                     artifact: 'dockerBuildInfo'
+#                     path: '$(Pipeline.Workspace)/dockerBuildInfo'
+#                   displayName: Download dockerBuildInfo artifact
+
+#                 - script: |
+#                     source $(Pipeline.Workspace)/dockerBuildInfo/build-info.txt
+#                     echo "##vso[task.setvariable variable=resolvedTag]$dockerTag"
+#                   displayName: Read Docker tag
+
+#                 - template: templates/docker-deploy-template.yml
+
+#   - stage: Deploy_TEST
+#     displayName: Deploy to TEST
+#     dependsOn: Deploy_DEV
+#     variables:
+#       - template: vars/test-vars.yml
+#     jobs:
+#       - deployment: DeployDockerTest
+#         environment: 'AGL-TEST'
+#         strategy:
+#           runOnce:
+#             deploy:
+#               steps:
+#                 - task: DownloadPipelineArtifact@2
+#                   inputs:
+#                     buildType: 'specific'
+#                     project: '$(System.TeamProject)'
+#                     pipeline: 'Nextjs AGL Build Pipeline'
+#                     runVersion: 'latest'
+#                     artifact: 'dockerBuildInfo'
+#                     path: '$(Pipeline.Workspace)/dockerBuildInfo'
+#                   displayName: Download dockerBuildInfo artifact
+
+#                 - script: |
+#                     source $(Pipeline.Workspace)/dockerBuildInfo/build-info.txt
+#                     echo "##vso[task.setvariable variable=resolvedTag]$dockerTag"
+#                   displayName: Read Docker tag
+
+#                 - template: templates/docker-deploy-template.yml
+
+#   - stage: Deploy_PROD
+#     displayName: Deploy to PROD
+#     dependsOn: Deploy_TEST
+#     condition: and(succeeded(), eq(variables['resources.pipeline.buildPipeline.sourceBranch'], 'refs/heads/main'))
+#     variables:
+#       - template: vars/prod-vars.yml
+#     jobs:
+#       - deployment: DeployDockerProd
+#         environment: 'AGL-PROD'
+#         strategy:
+#           runOnce:
+#             deploy:
+#               steps:
+#                 - task: DownloadPipelineArtifact@2
+#                   inputs:
+#                     buildType: 'specific'
+#                     project: '$(System.TeamProject)'
+#                     pipeline: 'Nextjs AGL Build Pipeline'
+#                     runVersion: 'latest'
+#                     artifact: 'dockerBuildInfo'
+#                     path: '$(Pipeline.Workspace)/dockerBuildInfo'
+#                   displayName: Download dockerBuildInfo artifact
+
+#                 - script: |
+#                     source $(Pipeline.Workspace)/dockerBuildInfo/build-info.txt
+#                     echo "##vso[task.setvariable variable=resolvedTag]$dockerTag"
+#                   displayName: Read Docker tag
+
+#                 - template: templates/docker-deploy-template.yml
+trigger: none
+
+resources:
+  pipelines:
+    - pipeline: buildPipeline
+      source: Nextjs AGL Build Pipeline
+      trigger: none
+
+parameters:
+  - name: environment
+    displayName: 'Select environment to deploy to'
+    type: string
+    default: DEV
+    values:
+      - DEV
+      - TEST
+      - PROD
+
+variables:
+  environment: ${{ parameters.environment }}
+
+stages:
+  - stage: Deploy_DEV
+    displayName: Deploy to DEV
+    condition: eq(variables['environment'], 'DEV')
+    variables:
+      - template: vars/dev-vars.yml
+    jobs:
+      - deployment: DeployDockerDev
+        environment: 'AGL-DEV'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadPipelineArtifact@2
+                  inputs:
+                    buildType: 'specific'
+                    project: '$(System.TeamProject)'
+                    pipeline: 'Nextjs AGL Build Pipeline'
+                    runVersion: 'latest'
+                    artifact: 'dockerBuildInfo'
+                    path: '$(Pipeline.Workspace)/dockerBuildInfo'
+                  displayName: Download dockerBuildInfo artifact
+
+                - script: |
+                    source $(Pipeline.Workspace)/dockerBuildInfo/build-info.txt
+                    echo "##vso[task.setvariable variable=resolvedTag]$dockerTag"
+                  displayName: Read Docker tag
+
+                - template: templates/docker-deploy-template.yml
+
+  - stage: Deploy_TEST
+    displayName: Deploy to TEST
+    condition: eq(variables['environment'], 'TEST')
+    variables:
+      - template: vars/test-vars.yml
+    jobs:
+      - deployment: DeployDockerTest
+        environment: 'AGL-TEST'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadPipelineArtifact@2
+                  inputs:
+                    buildType: 'specific'
+                    project: '$(System.TeamProject)'
+                    pipeline: 'Nextjs AGL Build Pipeline'
+                    runVersion: 'latest'
+                    artifact: 'dockerBuildInfo'
+                    path: '$(Pipeline.Workspace)/dockerBuildInfo'
+                  displayName: Download dockerBuildInfo artifact
+
+                - script: |
+                    source $(Pipeline.Workspace)/dockerBuildInfo/build-info.txt
+                    echo "##vso[task.setvariable variable=resolvedTag]$dockerTag"
+                  displayName: Read Docker tag
+
+                - template: templates/docker-deploy-template.yml
+
+  - stage: Deploy_PROD
+    displayName: Deploy to PROD
+    condition: eq(variables['environment'], 'PROD')
+    variables:
+      - template: vars/prod-vars.yml
+    jobs:
+      - deployment: DeployDockerProd
+        environment: 'AGL-PROD'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadPipelineArtifact@2
+                  inputs:
+                    buildType: 'specific'
+                    project: '$(System.TeamProject)'
+                    pipeline: 'Nextjs AGL Build Pipeline'
+                    runVersion: 'latest'
+                    artifact: 'dockerBuildInfo'
+                    path: '$(Pipeline.Workspace)/dockerBuildInfo'
+                  displayName: Download dockerBuildInfo artifact
+
+                - script: |
+                    source $(Pipeline.Workspace)/dockerBuildInfo/build-info.txt
+                    echo "##vso[task.setvariable variable=resolvedTag]$dockerTag"
+                  displayName: Read Docker tag
+
+                - template: templates/docker-deploy-template.yml
