@@ -1,0 +1,33 @@
+# Next JS
+# Dependencies
+node_modules
+package-lock.json
+# Build output
+.next
+# Production
+# .env files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# Miscellaneous
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+# Log files
+*.log
+# Coverage directory used by tools like istanbul and coverage
+coverage
+# Next.js build output
+out
+# Static export
+out
+# Sentry
+# Sentry CLI files
+.sentryclirc
+# Sentry upload files
+.sentryclirc
+# Sentry upload files
+.sentryclirc
+# Sentry upload files
